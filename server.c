@@ -10,7 +10,11 @@
 typedef struct
 {
   int id;
-  struct sockaddr adres;
+  int wspX;
+  int wspY;
+  int oldX;
+  int oldY;
+  struct sockaddr_in adres;
 } zawodnik;
 
 void *wyslijPozycjeKola();
@@ -20,11 +24,11 @@ int wspX, wspY;
 int sd, clen;
 char *zera[3] = { "", "0", "00" };
 int idZawodnika;
-//zawodnik tablicaZawodnikow[999];
+zawodnik tablicaZawodnikow[999];
 
 int main()
 {
-  char *data = (char*) calloc(1, sizeof(char));
+  char *data = (char*) calloc(10, sizeof(char));
   pthread_t tid;
   struct sockaddr_in sad,cad;
 
@@ -41,19 +45,22 @@ int main()
   wspX = 100-(15/2);
   wspY = 200-(15/2);
 
-  //pthread_create(&tid,NULL,wyslijPozycjeKola,NULL);
+  pthread_create(&tid,NULL,wyslijPozycjeKola,NULL);
 
   while (1)
   {
-    recvfrom(sd, data,sizeof(data),0,(struct sockaddr *) &cad,&clen);
+    recvfrom(sd, data,10,0,(struct sockaddr *) &cad,&clen);
 
     if(strcmp(data, "init") == 0)
     {
+      tablicaZawodnikow[idZawodnika].adres = cad;
       wyslijDanePoczatkowe((struct sockaddr *) &cad);
+      idZawodnika++;
     }
     else
     {
-      sendto(sd, data,sizeof(data),0,(struct sockaddr *) &cad,clen);
+      printf("otrzymalem dane: %s\n", data);
+      //sendto(sd, data,sizeof(data),0,(struct sockaddr *) &cad,clen);
     }
   }
 
@@ -62,6 +69,21 @@ int main()
 
 void *wyslijPozycjeKola()
 {
+  int i;
+
+  while(1)
+  {
+    usleep(200000);
+    printf("wysylam dane %d y %d", wspX, wspY);
+
+    for(i = 0; i < idZawodnika; i++)
+    {
+      sendto(sd, zwrocWspolrzedne(), 6, 0, (struct sockaddr *) &tablicaZawodnikow[i].adres, clen);
+    }
+
+    wspX += 1;
+    wspY += 1;
+  }
   return;
 }
 
@@ -79,8 +101,6 @@ void wyslijDanePoczatkowe(struct sockaddr *cad)
   printf("dane poczatkowe: %s\n", danePoczatkowe);
 
   sendto(sd, danePoczatkowe, 10, 0, cad, clen);
-
-  idZawodnika++;
 }
 
 char *zwrocWspolrzedne()

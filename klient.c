@@ -25,18 +25,25 @@ int wspX, wspY;
 int oldX, oldY;
 int roznicaX, roznicaY;
 int idZawodnika;
+int sd,clen;
+struct sockaddr_in sad, cad;
+char *zera[3] = { "", "0", "00" };
+char *daneJakies;
 
+void *odczytujNadchodzaceDane();
 void rysujKolo();
 int sprawdzPolozenieKursora(int x, int y);
 void ustawWspolrzedne(char *wspolrzedne);
 void ustawDanePoczatkowe(char *dane);
 char *substring(int start, int stop, char *src, char *dst);
+char *zwrocDaneDoWyslania();
+char *zwrocIdZawodnika();
+char *zwrocWspolrzedne();
 
 int main(int argc, char **argv)
 {
-  int sd,clen;
   char *data = (char*) calloc(10, sizeof(char));
-  struct sockaddr_in sad, cad;
+  pthread_t tid;
 
   if(argc != 2)
   {
@@ -81,8 +88,70 @@ int main(int argc, char **argv)
 
   ustawDanePoczatkowe(data);
 
+  pthread_create(&tid,NULL,odczytujNadchodzaceDane,NULL);
+
   printf("id: %d, x: %d, y: %d\n", idZawodnika, wspX, wspY);
 
+  char *wsp = (char*) calloc(6, sizeof(char));
+  while(1)
+  {
+    recvfrom(sd, wsp, 6, 0, (struct sockaddr *) &cad, &clen);
+    ustawWspolrzedne(wsp);
+    rysujKolo();
+  }
+}
+
+void rysujKolo()
+{
+  printf("otrzymalem od serwera nastepujace dane: %d %d\n", wspX, wspY);
+  XClearWindow(mydisplay, mywindow);
+  XSetForeground(mydisplay,mygc,mycolor.pixel);
+  XFillArc(mydisplay, mywindow, mygc, wspX-(100/2), wspY-(100/2), 100, 100, 0, 360*64);
+  XFlush(mydisplay);
+}
+
+int sprawdzPolozenieKursora(int x, int y)
+{
+  if(abs(wspX-x) <= 50 && abs(wspY-y) <= 50)
+    return 1;
+  else
+    return 0;
+}
+
+void ustawWspolrzedne(char *wspolrzedne)
+{
+  char x[3];
+  char y[3];
+
+  substring(0, 3, wspolrzedne, x);
+  substring(3, 7, wspolrzedne, y);
+
+  wspX = atoi(x);
+  wspY = atoi(y);
+}
+
+void ustawDanePoczatkowe(char *dane)
+{
+  printf("dane: %s\n", dane);
+  char id[3];
+  char wspolrzedneXY[6];
+
+  substring(0, 3, dane, id);
+  substring(3, 10, dane, wspolrzedneXY);
+
+  idZawodnika = atoi(id);
+  ustawWspolrzedne(wspolrzedneXY);
+}
+
+char *substring(int start, int stop, char *src, char *dst)
+{
+  int count = stop - start;
+  sprintf(dst, "%.*s", count, src + start);
+  return dst;
+}
+
+void *odczytujNadchodzaceDane()
+{
   while (1)
   {
     XNextEvent(mydisplay,&myevent);
@@ -118,11 +187,15 @@ int main(int argc, char **argv)
 
           oldX = x;
           oldY = y;
-          printf("roznica x: %d, roznica y: %d\n", roznicaX, roznicaY);
+          //printf("roznica x: %d, roznica y: %d\n", roznicaX, roznicaY);
 
           wspX += roznicaX;
           wspY += roznicaY;
-          rysujKolo();
+
+          daneJakies = zwrocDaneDoWyslania();
+          printf("WYSYLAM: %s\n", daneJakies);
+          sendto(sd, daneJakies, 10, 0, (struct sockaddr *) &sad, clen);
+          //rysujKolo();
         }
         else
         {
@@ -142,50 +215,49 @@ int main(int argc, char **argv)
   }
 }
 
-void rysujKolo()
+char *zwrocWspolrzedne()
 {
-  XClearWindow(mydisplay, mywindow);
-  XSetForeground(mydisplay,mygc,mycolor.pixel);
-  XFillArc(mydisplay, mywindow, mygc, wspX-(100/2), wspY-(100/2), 100, 100, 0, 360*64);
-}
+  char *wspolrzedne = (char*) calloc(1, sizeof(char));
+  char *wspolrzednaX = (char*) calloc(1, sizeof(char));
+  char *wspolrzednaY = (char*) calloc(1, sizeof(char));
 
-int sprawdzPolozenieKursora(int x, int y)
-{
-  if(abs(wspX-x) <= 50 && abs(wspY-y) <= 50)
-    return 1;
+  if(wspX < 10)
+    sprintf(wspolrzednaX, "%s%d", zera[2], wspX);
+  else if(wspX < 100 && wspX > 9)
+    sprintf(wspolrzednaX, "%s%d", zera[1], wspX);
   else
-    return 0;
+    sprintf(wspolrzednaX, "%s%d", zera[0], wspX);
+
+  if(wspY < 10)
+    sprintf(wspolrzednaY, "%s%d", zera[2], wspY);
+  else if(wspY < 100 && wspY > 9)
+    sprintf(wspolrzednaY, "%s%d", zera[1], wspY);
+  else
+    sprintf(wspolrzednaY, "%s%d", zera[0], wspY);
+
+  sprintf(wspolrzedne, "%s%s", wspolrzednaX, wspolrzednaY);
+
+  return wspolrzedne;
 }
 
-void ustawWspolrzedne(char *wspolrzedne)
+char *zwrocIdZawodnika()
 {
-  char x[3];
-  char y[3];
+  char *mojeId = (char*) calloc(1, sizeof(char));
 
-  substring(0, 3, wspolrzedne, x);
-  substring(3, 7, wspolrzedne, y);
+  if(idZawodnika < 10)
+    sprintf(mojeId, "%s%d", zera[2], idZawodnika);
+  else if(idZawodnika < 100 && idZawodnika > 9)
+    sprintf(mojeId, "%s%d", zera[1], idZawodnika);
+  else
+    sprintf(mojeId, "%s%d", zera[0], idZawodnika);
 
-  wspX = atoi(x);
-  wspY = atoi(y);
+  return mojeId;
 }
 
-void ustawDanePoczatkowe(char *dane)
+char *zwrocDaneDoWyslania()
 {
-  printf("dane: %s", dane);
-  char id[3];
-  char wspolrzedneXY[6];
-
-  substring(0, 3, dane, id);
-  substring(3, 10, dane, wspolrzedneXY);
-
-  idZawodnika = atoi(id);
-  ustawWspolrzedne(wspolrzedneXY);
-}
-
-char *substring(int start, int stop, char *src, char *dst)
-{
-  int count = stop - start;
-  sprintf(dst, "%.*s", count, src + start);
-  return dst;
+  char *daneDoWyslania = (char*) calloc(10, sizeof(char));
+  sprintf(daneDoWyslania, "%s%s", zwrocIdZawodnika(), zwrocWspolrzedne());
+  return daneDoWyslania;
 }
 

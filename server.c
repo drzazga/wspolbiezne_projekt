@@ -20,10 +20,20 @@ typedef struct
 void *wyslijPozycjeKola();
 void wyslijDanePoczatkowe(struct sockaddr *adres);
 char *zwrocWspolrzedne();
+char *substring(int start, int stop, char *src, char *dst);
+void ustawWspolrzedne();
+
 int wspX, wspY;
 int sd, clen;
 char *zera[3] = { "", "0", "00" };
 int idZawodnika;
+int idOdebrane;
+int xOdebrane;
+int yOdebrane;
+char id[3];
+char x[3];
+char y[3];
+
 zawodnik tablicaZawodnikow[999];
 
 int main()
@@ -60,6 +70,15 @@ int main()
     else
     {
       printf("otrzymalem dane: %s\n", data);
+      substring(0, 3, data, id);
+      substring(3, 6, data, x);
+      substring(6, 9, data, y);
+      idOdebrane = atoi(id);
+      xOdebrane = atoi(x);
+      yOdebrane = atoi(y);
+
+      tablicaZawodnikow[idOdebrane].wspX = xOdebrane;
+      tablicaZawodnikow[idOdebrane].wspX = yOdebrane;
       //sendto(sd, data,sizeof(data),0,(struct sockaddr *) &cad,clen);
     }
   }
@@ -70,19 +89,19 @@ int main()
 void *wyslijPozycjeKola()
 {
   int i;
+  char *wspDoWyslania = (char*) calloc(6, sizeof(char));;
 
   while(1)
   {
-    usleep(200000);
+    usleep(500000);
     printf("wysylam dane %d y %d", wspX, wspY);
+
+    wspDoWyslania = zwrocWspolrzedne();
 
     for(i = 0; i < idZawodnika; i++)
     {
-      sendto(sd, zwrocWspolrzedne(), 6, 0, (struct sockaddr *) &tablicaZawodnikow[i].adres, clen);
+      sendto(sd, wspDoWyslania, 6, 0, (struct sockaddr *) &tablicaZawodnikow[i].adres, clen);
     }
-
-    wspX += 1;
-    wspY += 1;
   }
   return;
 }
@@ -109,6 +128,8 @@ char *zwrocWspolrzedne()
   char *wspolrzednaX = (char*) calloc(1, sizeof(char));
   char *wspolrzednaY = (char*) calloc(1, sizeof(char));
 
+  ustawWspolrzedne();
+
   if(wspX < 10)
     sprintf(wspolrzednaX, "%s%d", zera[2], wspX);
   else if(wspX < 100 && wspX > 9)
@@ -126,5 +147,29 @@ char *zwrocWspolrzedne()
   sprintf(wspolrzedne, "%s%s", wspolrzednaX, wspolrzednaY);
 
   return wspolrzedne;
+}
+
+char *substring(int start, int stop, char *src, char *dst)
+{
+  int count = stop - start;
+  sprintf(dst, "%.*s", count, src + start);
+  return dst;
+}
+
+void ustawWspolrzedne()
+{
+  int i;
+  int x, y;
+  for(i = 0; i < idZawodnika; i++)
+  {
+    x += tablicaZawodnikow[i].wspX;
+    y += tablicaZawodnikow[i].wspY;
+  }
+
+  if(idZawodnika != 0)
+  {
+    wspX = x / (idZawodnika);
+    wspY = y / (idZawodnika);
+  }
 }
 

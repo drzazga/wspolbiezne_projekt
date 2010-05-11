@@ -1,0 +1,15 @@
+Imię i nazwisko: Bartosz Drzazgowski
+Zadanie: Przesuwanie koła przez wielu użytkowników.
+
+Uzasadnienie: Do komunikacji pomiędzy klientem a serwerem wybrałem gniazda bsd, w wyborze
+kierowałem się tym, że umożliwiają komunikację z procesami na różnych komputerach.
+Serwer w oddzielnym wątku nasłuchuję i zapisuje nadchodzące dane. Wybrałem wątki, ponieważ
+dzielą pamięć z procesem macierzystym i łatwiej było to napisać.
+
+Opis działania: Użytkownicy przesuwają koło znajdujące się na ekranie, odpowiednie
+współrzędne przesyłane są do serwera, który w konkretnych odstępach czasu
+wylicza współrzędne do wysłania wszystkim klientom. Klienci odbierają współrzędne i
+na ich podstawie rysują koło.
+Sytuacje błędne:
+    - Brak podania IP serwera przy wywoływaniu klienta - odpowiednia informacja
+

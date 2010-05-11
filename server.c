@@ -14,6 +14,7 @@ typedef struct
   int wspY;
   int oldX;
   int oldY;
+  int odebraneWObecnejIteracji;
   struct sockaddr_in adres;
 } zawodnik;
 
@@ -78,7 +79,8 @@ int main()
       yOdebrane = atoi(y);
 
       tablicaZawodnikow[idOdebrane].wspX = xOdebrane;
-      tablicaZawodnikow[idOdebrane].wspX = yOdebrane;
+      tablicaZawodnikow[idOdebrane].wspY = yOdebrane;
+      tablicaZawodnikow[idOdebrane].odebraneWObecnejIteracji = 1;
       //sendto(sd, data,sizeof(data),0,(struct sockaddr *) &cad,clen);
     }
   }
@@ -93,8 +95,7 @@ void *wyslijPozycjeKola()
 
   while(1)
   {
-    usleep(500000);
-    printf("wysylam dane %d y %d", wspX, wspY);
+    usleep(200000);
 
     wspDoWyslania = zwrocWspolrzedne();
 
@@ -158,18 +159,23 @@ char *substring(int start, int stop, char *src, char *dst)
 
 void ustawWspolrzedne()
 {
-  int i;
+  int i, iloscOdebranych = 0;
   int x, y;
   for(i = 0; i < idZawodnika; i++)
   {
-    x += tablicaZawodnikow[i].wspX;
-    y += tablicaZawodnikow[i].wspY;
+    if(tablicaZawodnikow[i].odebraneWObecnejIteracji == 1)
+    {
+      x += tablicaZawodnikow[i].wspX;
+      y += tablicaZawodnikow[i].wspY;
+      tablicaZawodnikow[i].odebraneWObecnejIteracji = 0;
+      iloscOdebranych++;
+    }
   }
 
-  if(idZawodnika != 0)
+  if(iloscOdebranych != 0)
   {
-    wspX = x / (idZawodnika);
-    wspY = y / (idZawodnika);
+    wspX = x / iloscOdebranych;
+    wspY = y / iloscOdebranych;
   }
 }
 

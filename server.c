@@ -12,8 +12,6 @@ typedef struct
   int id;
   int wspX;
   int wspY;
-  int oldX;
-  int oldY;
   int odebraneWObecnejIteracji;
   struct sockaddr_in adres;
 } zawodnik;
@@ -70,7 +68,6 @@ int main()
     }
     else
     {
-      printf("otrzymalem dane: %s\n", data);
       substring(0, 3, data, id);
       substring(3, 6, data, x);
       substring(6, 9, data, y);
@@ -81,7 +78,6 @@ int main()
       tablicaZawodnikow[idOdebrane].wspX = xOdebrane;
       tablicaZawodnikow[idOdebrane].wspY = yOdebrane;
       tablicaZawodnikow[idOdebrane].odebraneWObecnejIteracji = 1;
-      //sendto(sd, data,sizeof(data),0,(struct sockaddr *) &cad,clen);
     }
   }
 
@@ -118,7 +114,7 @@ void wyslijDanePoczatkowe(struct sockaddr *cad)
   else
     sprintf(danePoczatkowe, "%s%d%s", zera[0], idZawodnika, zwrocWspolrzedne());
 
-  printf("dane poczatkowe: %s\n", danePoczatkowe);
+  //printf("dane poczatkowe: %s\n", danePoczatkowe);
 
   sendto(sd, danePoczatkowe, 10, 0, cad, clen);
 }

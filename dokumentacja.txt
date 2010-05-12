@@ -4,7 +4,8 @@ Zadanie: Przesuwanie koła przez wielu użytkowników.
 Uzasadnienie: Do komunikacji pomiędzy klientem a serwerem wybrałem gniazda bsd, w wyborze
 kierowałem się tym, że umożliwiają komunikację z procesami na różnych komputerach.
 Serwer w oddzielnym wątku nasłuchuję i zapisuje nadchodzące dane. Wybrałem wątki, ponieważ
-dzielą pamięć z procesem macierzystym i łatwiej było to napisać.
+dzielą pamięć z procesem macierzystym, dzięki czemu nie trzeba było się trudzić z innymi mechanizmami
+dzielenia pamięci.
 
 Opis działania: Użytkownicy przesuwają koło znajdujące się na ekranie, odpowiednie
 współrzędne przesyłane są do serwera, który w konkretnych odstępach czasu

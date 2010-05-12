@@ -53,7 +53,6 @@ int main(int argc, char **argv)
   }
 
   sd=socket(AF_INET,SOCK_DGRAM,0);
-  //bzero(&sad, sizeof(sad));
   sad.sin_family=AF_INET;
   sad.sin_addr.s_addr=inet_addr(argv[1]);
   sad.sin_port=htons((ushort) 5000);
@@ -90,7 +89,7 @@ int main(int argc, char **argv)
 
   pthread_create(&tid,NULL,odczytujNadchodzaceDane,NULL);
 
-  printf("id: %d, x: %d, y: %d\n", idZawodnika, wspX, wspY);
+  //printf("id: %d, x: %d, y: %d\n", idZawodnika, wspX, wspY);
 
   char *wsp = (char*) calloc(6, sizeof(char));
   while(1)
@@ -103,7 +102,7 @@ int main(int argc, char **argv)
 
 void rysujKolo()
 {
-  printf("otrzymalem od serwera nastepujace dane: %d %d\n", wspX, wspY);
+  //printf("otrzymalem od serwera nastepujace dane: %d %d\n", wspX, wspY);
   XClearWindow(mydisplay, mywindow);
   XSetForeground(mydisplay,mygc,mycolor.pixel);
   XFillArc(mydisplay, mywindow, mygc, wspX-(100/2), wspY-(100/2), 100, 100, 0, 360*64);
@@ -112,7 +111,7 @@ void rysujKolo()
 
 int sprawdzPolozenieKursora(int x, int y)
 {
-  if(abs(wspX-x) <= 50 && abs(wspY-y) <= 50)
+  if(sqrt(pow(wspX-x, 2.0) + pow(wspY-y, 2.0)) <= 50.0)
     return 1;
   else
     return 0;
@@ -132,7 +131,6 @@ void ustawWspolrzedne(char *wspolrzedne)
 
 void ustawDanePoczatkowe(char *dane)
 {
-  printf("dane: %s\n", dane);
   char id[3];
   char wspolrzedneXY[6];
 
@@ -155,17 +153,9 @@ void *odczytujNadchodzaceDane()
   while (1)
   {
     XNextEvent(mydisplay,&myevent);
-    printf("event no. %5d\n",myevent.type);
+    //printf("event no. %5d\n",myevent.type);
     switch (myevent.type)
     {
-      case ButtonPress:
-        x = myevent.xmotion.x;
-        y = myevent.xmotion.y;
-
-        printf("nacisnieto przycisk x: %d y: %d\n", x, y);
-
-        break;
-
       case ButtonRelease:
         oldX = -1;
         oldY = -1;
@@ -187,15 +177,12 @@ void *odczytujNadchodzaceDane()
 
           oldX = x;
           oldY = y;
-          //printf("roznica x: %d, roznica y: %d\n", roznicaX, roznicaY);
 
           wspX += roznicaX;
           wspY += roznicaY;
 
           daneJakies = zwrocDaneDoWyslania();
-          printf("WYSYLAM: %s\n", daneJakies);
           sendto(sd, daneJakies, 10, 0, (struct sockaddr *) &sad, clen);
-          //rysujKolo();
         }
         else
         {

@@ -65,6 +65,9 @@ int main()
       tablicaZawodnikow[idZawodnika].adres = cad;
       wyslijDanePoczatkowe((struct sockaddr *) &cad);
       idZawodnika++;
+
+      if(idZawodnika == 999)
+        idZawodnika = 0;
     }
     else
     {
